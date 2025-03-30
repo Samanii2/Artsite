@@ -1,0 +1,11 @@
+{
+  "images": [
+    {
+      "id": "1",
+      "filename": "image1.jpg",
+      "description": "Description for image 1",
+      "comments": []
+    }
+    // Add more images here
+  ]
+} 
