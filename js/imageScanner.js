@@ -9,16 +9,24 @@ class ImageScanner {
 
     async scanDirectory() {
         try {
-            const response = await fetch('js/images.json');
+            // Make sure this path matches your directory structure
+            const response = await fetch('./images/manifest.json');
             const data = await response.json();
-            this.images = data.images;
+            
+            // Convert manifest format to our needed format
+            this.images = data.images.map((filename, index) => ({
+                id: (index + 1).toString(),
+                filename: filename,
+                description: "",
+                comments: []
+            }));
             
             // Load saved data from localStorage
             this.loadSavedData();
             
             return this.images;
         } catch (error) {
-            console.error('Error loading images:', error);
+            console.error('Error loading manifest:', error);
             return [];
         }
     }

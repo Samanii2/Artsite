@@ -42,7 +42,7 @@ function displayCurrentImage() {
     }
 
     const image = filteredImages[currentIndex];
-    const imgPath = `images/${image.filename}`;
+    const imgPath = `./images/${image.filename}`;
     
     const img = document.getElementById('currentImage');
     img.onerror = () => {
