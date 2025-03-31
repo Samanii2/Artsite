@@ -199,4 +199,87 @@
 
 .submit-btn:hover {
     background-color: #45a049;
+}
+
+/* Add these styles before the responsive design section */
+.filter-controls {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.filter-group:last-child {
+    margin-bottom: 0;
+}
+
+.filter-group label {
+    min-width: 100px;
+    font-weight: 500;
+}
+
+.filter-group select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 150px;
+}
+
+/* Fullscreen styles */
+.fullscreen-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+.fullscreen-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.fullscreen img {
+    max-width: 95%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.fullscreen-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+}
+
+/* Add these styles where other image styles are defined */
+#currentImage {
+    max-width: 100%;
+    height: auto;
+    margin-top: 20px;
+}
+
+#currentImage.rotating {
+    transition: transform 0.3s ease;
 } 

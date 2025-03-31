@@ -5,6 +5,9 @@ let currentIndex = 0;
 let filteredImages = [];
 let currentRotation = 0;
 const rotationStorage = {};
+let sortOption = 'name';
+let filterOption = 'all';
+let isFullscreen = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize the image scanner
@@ -49,11 +52,15 @@ function displayCurrentImage() {
         console.error('Failed to load image:', imgPath);
         img.alt = 'Failed to load image';
     };
+
+    // Remove the rotating class to disable transition animation
+    img.classList.remove('rotating');
+    
+    // Load the image
     img.src = imgPath;
     
-    // Load saved rotation using image ID
-    const savedRotations = JSON.parse(localStorage.getItem('imageRotations') || '{}');
-    currentRotation = savedRotations[image.id] || 0;
+    // Get saved rotation for this image
+    currentRotation = rotationStorage[image.id] || 0;
     img.style.transform = `rotate(${currentRotation}deg)`;
     
     document.getElementById('imageName').textContent = image.name;
@@ -149,18 +156,42 @@ function setupEventListeners() {
         }
     });
     
-    // Keyboard navigation
+    // Update keyboard navigation to include rotation
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') {
-            document.getElementById('prevButton').click();
-        } else if (e.key === 'ArrowRight') {
-            document.getElementById('nextButton').click();
+        switch(e.key) {
+            case 'ArrowLeft':
+                document.getElementById('prevButton').click();
+                break;
+            case 'ArrowRight':
+                document.getElementById('nextButton').click();
+                break;
+            case 'ArrowUp':
+                rotateImage('right');
+                break;
+            case 'ArrowDown':
+                rotateImage('left');
+                break;
         }
     });
 
     // Rotation handlers
     document.getElementById('rotateLeftButton').addEventListener('click', () => rotateImage('left'));
     document.getElementById('rotateRightButton').addEventListener('click', () => rotateImage('right'));
+
+    // Sort handler
+    document.getElementById('sortBy').addEventListener('change', (e) => {
+        sortOption = e.target.value;
+        applyFiltersAndSort();
+    });
+
+    // Filter handler
+    document.getElementById('filterBy').addEventListener('change', (e) => {
+        filterOption = e.target.value;
+        applyFiltersAndSort();
+    });
+
+    // Fullscreen handler
+    document.getElementById('fullscreenButton').addEventListener('click', toggleFullscreen);
 }
 
 function updateSearchResults(filteredCount, totalCount) {
@@ -175,10 +206,13 @@ function updateSearchResults(filteredCount, totalCount) {
 }
 
 function rotateImage(direction) {
+    const img = document.getElementById('currentImage');
+    // Add the rotating class before changing transform
+    img.classList.add('rotating');
+    
     currentRotation += direction === 'left' ? -90 : 90;
     currentRotation = currentRotation % 360;
     
-    const img = document.getElementById('currentImage');
     img.style.transform = `rotate(${currentRotation}deg)`;
     
     // Save the rotation for the current image using image ID instead of URL
@@ -297,4 +331,80 @@ function loadImage(image) {
         noComments.textContent = 'No comments yet';
         commentsList.appendChild(noComments);
     }
-} 
+}
+
+function applyFiltersAndSort() {
+    // First apply filters
+    filteredImages = imageScanner.images.filter(image => {
+        switch (filterOption) {
+            case 'withComments':
+                return imageScanner.getComments(image.id).length > 0;
+            case 'withoutComments':
+                return imageScanner.getComments(image.id).length === 0;
+            case 'withDescription':
+                return image.description && image.description.trim().length > 0;
+            case 'withoutDescription':
+                return !image.description || image.description.trim().length === 0;
+            default:
+                return true;
+        }
+    });
+
+    // Then sort
+    filteredImages.sort((a, b) => {
+        switch (sortOption) {
+            case 'name':
+                return a.filename.localeCompare(b.filename);
+            case 'date':
+                return a.id - b.id;
+            case 'comments':
+                return imageScanner.getComments(b.id).length - imageScanner.getComments(a.id).length;
+            default:
+                return 0;
+        }
+    });
+
+    currentIndex = 0;
+    displayCurrentImage();
+    updateSearchResults(filteredImages.length, imageScanner.images.length);
+}
+
+function toggleFullscreen() {
+    const imageContainer = document.querySelector('.image-container');
+    const currentImage = document.getElementById('currentImage');
+
+    if (!isFullscreen) {
+        // Enter fullscreen
+        imageContainer.classList.add('fullscreen');
+        document.body.style.overflow = 'hidden';
+        
+        // Create fullscreen exit button if it doesn't exist
+        if (!document.querySelector('.fullscreen-controls')) {
+            const controls = document.createElement('div');
+            controls.className = 'fullscreen-controls';
+            controls.innerHTML = `
+                <button class="fullscreen-btn" onclick="toggleFullscreen()">✕ Exit Fullscreen</button>
+            `;
+            imageContainer.appendChild(controls);
+        }
+    } else {
+        // Exit fullscreen
+        imageContainer.classList.remove('fullscreen');
+        document.body.style.overflow = '';
+        
+        // Remove fullscreen controls
+        const controls = document.querySelector('.fullscreen-controls');
+        if (controls) {
+            controls.remove();
+        }
+    }
+    
+    isFullscreen = !isFullscreen;
+}
+
+// Add keyboard support for fullscreen
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isFullscreen) {
+        toggleFullscreen();
+    }
+}); 
