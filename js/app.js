@@ -8,6 +8,10 @@ const rotationStorage = {};
 let sortOption = 'name';
 let filterOption = 'all';
 let isFullscreen = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let initialRotation = 0;
+let initialDistance = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize the image scanner
@@ -192,6 +196,99 @@ function setupEventListeners() {
 
     // Fullscreen handler
     document.getElementById('fullscreenButton').addEventListener('click', toggleFullscreen);
+
+    // Touch controls
+    const imageContainer = document.querySelector('.image-container');
+    
+    // Touch start
+    imageContainer.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            // Single touch - prepare for swipe
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            // Two finger touch - prepare for rotation
+            e.preventDefault();
+            initialRotation = currentRotation;
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            initialDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+        }
+    });
+
+    // Touch move
+    imageContainer.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            // Handle rotation gesture
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            
+            // Calculate new angle based on the line between touch points
+            const angle = Math.atan2(
+                touch2.clientY - touch1.clientY,
+                touch2.clientX - touch1.clientX
+            ) * 180 / Math.PI;
+            
+            // Calculate new distance between touch points
+            const newDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+
+            // If distance changed significantly, it's a pinch gesture
+            if (Math.abs(newDistance - initialDistance) > 50) {
+                return; // Ignore rotation during pinch
+            }
+
+            // Update rotation
+            const img = document.getElementById('currentImage');
+            img.classList.add('rotating');
+            currentRotation = initialRotation + Math.round(angle / 90) * 90;
+            img.style.transform = `rotate(${currentRotation}deg)`;
+        }
+    });
+
+    // Touch end
+    imageContainer.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length === 1 && e.touches.length === 0) {
+            // Handle swipe gesture
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            
+            // Only handle horizontal swipes if they're more horizontal than vertical
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Minimum swipe distance threshold
+                if (Math.abs(deltaX) > 50) {
+                    if (deltaX > 0) {
+                        // Swipe right - previous image
+                        document.getElementById('prevButton').click();
+                    } else {
+                        // Swipe left - next image
+                        document.getElementById('nextButton').click();
+                    }
+                }
+            }
+        } else if (e.touches.length === 0) {
+            // Save rotation after two-finger gesture
+            const currentImage = filteredImages[currentIndex];
+            rotationStorage[currentImage.id] = currentRotation;
+            localStorage.setItem('imageRotations', JSON.stringify(rotationStorage));
+        }
+    });
+
+    // Prevent default touch behaviors
+    imageContainer.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 }
 
 function updateSearchResults(filteredCount, totalCount) {

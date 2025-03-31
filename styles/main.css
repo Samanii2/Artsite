@@ -113,6 +113,12 @@
     .image-detail {
         position: static;
     }
+    
+    .fullscreen img {
+        max-width: 100%;
+        max-height: 100vh;
+        object-fit: contain;
+    }
 }
 
 /* Add these styles to your existing CSS */
@@ -282,4 +288,10 @@
 
 #currentImage.rotating {
     transition: transform 0.3s ease;
+}
+
+/* Add these styles */
+.image-container {
+    touch-action: none; /* Prevents default touch behaviors */
+    user-select: none; /* Prevents text selection during touch */
 } 
